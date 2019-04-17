@@ -8,7 +8,7 @@ The full API documentation is available [here](http://billingo.readthedocs.org/e
 The easiest way to install the Connector is using Composer:
 
 ```
-composer require voov/billingo-api-connector
+composer require otisz/billingo-connector
 ```
 
 Then use your framework's autoload, or simply add:
@@ -30,7 +30,7 @@ Registering your own autoloader is also a way (altough not recommended):
 spl_autoload_register(function ($class) {
 
     // project-specific namespace prefix
-    $prefix = 'Billingo\\API\\Connector';
+    $prefix = 'Otisz\\BillingoConnector';
 
     // base directory for the namespace prefix
     $base_dir = __DIR__ . '/src/';
@@ -63,7 +63,7 @@ You can start making requests to the Billingo API just by creating a new `Reques
 
 ```php
 <?php
-  use Billingo\API\Connector\HTTP\Request;
+  use Otisz\BillingoConnector\HTTP\Request;
 
   $billingo = new Request([
 	  'public_key' => 'YOUR_PUBLIC_KEY',
@@ -108,7 +108,7 @@ $clientData = [
       "postcode" => "PR1",
       "country" => "United Kingdom"
   ]
-]
+];
 $billingo->post('clients', $clientData);
 
 ```

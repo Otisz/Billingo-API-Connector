@@ -4,25 +4,32 @@
  * All rights reserved.
  */
 
-namespace Billingo\API\Connector;
+namespace Otisz\BillingoConnector;
 
-use Billingo\API\Connector\Exceptions\SignatureInvalid;
-use Billingo\API\Connector\Exceptions\TimingInvalid;
+use Otisz\BillingoConnector\Exceptions\SignatureInvalid;
+use Otisz\BillingoConnector\Exceptions\TimingInvalid;
 
 class TokenRequest
 {
     // one minute delta
-    const MAX_TIMING_DELTA = 60;
+    public const MAX_TIMING_DELTA = 60;
 
     /**
-     * @var string
+     * @var string $pubKey
      */
     private $pubKey;
+
     /**
-     * @var string
+     * @var string $privateKey
      */
     private $privateKey;
 
+    /**
+     * TokenRequest constructor.
+     *
+     * @param string $pubKey
+     * @param string $privateKey
+     */
     public function __construct(string $pubKey, string $privateKey)
     {
         $this->pubKey = $pubKey;
@@ -31,6 +38,8 @@ class TokenRequest
 
     /**
      * Generate token request data.
+     *
+     * @author Levente Otta <leventeotta@gmail.com>
      *
      * @param $timing
      *
@@ -44,9 +53,11 @@ class TokenRequest
     /**
      * Return timing information (ie. unix epoch).
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @return int
      */
-    public function generateTiming()
+    public function generateTiming(): int
     {
         return time();
     }
@@ -54,29 +65,35 @@ class TokenRequest
     /**
      * Generate data string with signature.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @param $timing
      *
      * @return string
      */
-    public function generateWithSignature($timing)
+    public function generateWithSignature($timing): string
     {
         $data = $this->generate($timing);
 
-        return $data.'|'.$this->sign($data);
+        return $data . '|' . $this->sign($data);
     }
 
     /**
      * Generate a data string with signature and timing
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @return string
      */
-    public function generateWithSignatureAndTiming()
+    public function generateWithSignatureAndTiming(): string
     {
         return $this->generateWithSignature($this->generateTiming());
     }
 
     /**
      * Return TRUE if timing is valid.
+     *
+     * @author Levente Otta <leventeotta@gmail.com>
      *
      * @param $userTiming
      *
@@ -89,6 +106,8 @@ class TokenRequest
 
     /**
      * Validate user string to be valid.
+     *
+     * @author Levente Otta <leventeotta@gmail.com>
      *
      * @param $userString
      * @param $timing
@@ -105,13 +124,15 @@ class TokenRequest
     /**
      * Return the data from the token request string.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @param string $requestString
      *
      * @return array
      */
     public static function requestStringData(string $requestString): array
     {
-        list($pubKey, $timing, $signature) = explode('|', $requestString);
+        [$pubKey, $timing, $signature] = explode('|', $requestString);
 
         return compact('pubKey', 'timing', 'signature');
     }
@@ -119,23 +140,26 @@ class TokenRequest
     /**
      * Validate a full token request string.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @param string $requestString
      * @param string $privateKey
      *
      * @return bool
-     *
-     * @throws SignatureInvalid
-     * @throws TimingInvalid
+     * @throws \Otisz\BillingoConnector\Exceptions\SignatureInvalid
+     * @throws \Otisz\BillingoConnector\Exceptions\TimingInvalid
      */
     public static function validateRequestString(string $requestString, string $privateKey): bool
     {
         $data = static::requestStringData($requestString);
         $self = new static($data['pubKey'], $privateKey);
+
         if (!$self->validateTiming($data['timing'])) {
-            throw new TimingInvalid();
+            throw new TimingInvalid;
         }
+
         if (!$self->validateSignature($data['signature'], $data['timing'])) {
-            throw new SignatureInvalid();
+            throw new SignatureInvalid;
         }
 
         return true;
@@ -143,6 +167,8 @@ class TokenRequest
 
     /**
      * Generate hash signature.
+     *
+     * @author Levente Otta <leventeotta@gmail.com>
      *
      * @param string $data
      *

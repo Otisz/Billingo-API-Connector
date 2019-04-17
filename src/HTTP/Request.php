@@ -1,32 +1,43 @@
 <?php
 /**
- * Copyright (c) 2015, VOOV LLC.
- * All rights reserved.
- * Written by Daniel Fekete.
+ * Deployed by Levente Otta <leventeotta@gmail.com>
+ *
+ * @author Levente Otta <leventeotta@gmail.com>
+ * @copyright Copyright (c) 2019. Levente Otta
  */
 
-namespace Billingo\API\Connector\HTTP;
+namespace Otisz\BillingoConnector\HTTP;
 
-use Billingo\API\Connector\Exceptions\JSONParseException;
-use Billingo\API\Connector\Exceptions\RequestErrorException;
-use Billingo\API\Connector\TokenRequest;
 use Firebase\JWT\JWT;
 use GuzzleHttp\Client;
+use Otisz\BillingoConnector\Contracts\Requestable;
+use Otisz\BillingoConnector\Exceptions\JSONParseException;
+use Otisz\BillingoConnector\Exceptions\RequestErrorException;
+use Otisz\BillingoConnector\TokenRequest;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class Request implements \Billingo\API\Connector\Contracts\Request
+/**
+ * Class Request
+ *
+ * @author Levente Otta <leventeotta@gmail.com>
+ *
+ * @package Otisz\BillingoConnector\HTTP
+ */
+class Request implements Requestable
 {
     /**
-     * @var Client
+     * @var \GuzzleHttp\Client $client
      */
     private $client;
 
-    /** @var array */
+    /**
+     * @var array $config
+     */
     private $config;
 
     /**
-     * @var OptionsResolver
+     * @var \Symfony\Component\OptionsResolver\OptionsResolver $resolver
      */
     private $resolver;
 
@@ -39,20 +50,22 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     {
         $this->config = $this->resolveOptions($options);
         $this->client = new Client([
-                'verify' => false,
-                'base_uri' => $this->config['host'],
-                'debug' => false,
+            'verify' => false,
+            'base_uri' => $this->config['host'],
+            'debug' => false,
         ]);
     }
 
     /**
      * Get required options for the Billingo API to work.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @param $opts
      *
-     * @return mixed
+     * @return array
      */
-    protected function resolveOptions($opts)
+    protected function resolveOptions($opts): array
     {
         $this->resolver = new OptionsResolver();
         $this->resolver->setDefault('version', '2');
@@ -72,36 +85,36 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     /**
      * Make a request to the Billingo API.
      *
-     * @param $method
-     * @param $uri
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
+     * @param string $method
+     * @param string $uri
      * @param array $data
      *
-     * @return mixed|array
-     *
-     * @throws JSONParseException
-     * @throws RequestErrorException
+     * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Otisz\BillingoConnector\Exceptions\JSONParseException
+     * @throws \Otisz\BillingoConnector\Exceptions\RequestErrorException
      */
-    public function request($method, $uri, $data = [])
+    public function request(string $method, string $uri, array $data = []): array
     {
         // get the key to use for the query
-        if ($method == strtoupper('GET') || $method == strtoupper('DELETE')) {
-            $queryKey = 'query';
-        } else {
-            $queryKey = 'json';
-        }
+        $queryKey = $method === strtoupper('GET') || $method === strtoupper('DELETE') ? 'query' : 'json';
 
         // make signature
-        $response = $this->client->request($method, $uri, [$queryKey => $data, 'headers' => $this->generateAuthHeader()]);
+        $response = $this->client->request($method, $uri, [
+            $queryKey => $data,
+            'headers' => $this->generateAuthHeader(),
+        ]);
 
         $jsonData = json_decode($response->getBody(), true);
 
-        if (null == $jsonData) {
-            throw new JSONParseException('Cannot decode: '.$response->getBody());
+        if ($jsonData === null) {
+            throw new JSONParseException('Cannot decode: ' . $response->getBody());
         }
 
-        if (200 != $response->getStatusCode() || 0 == $jsonData['success']) {
-            throw new RequestErrorException('Error: '.$jsonData['error'], $response->getStatusCode());
+        if ($jsonData['success'] === 0 || $response->getStatusCode() !== 200) {
+            throw new RequestErrorException('Error: ' . $jsonData['error'], $response->getStatusCode());
         }
 
         if (array_key_exists('data', $jsonData)) {
@@ -112,90 +125,57 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     }
 
     /**
-     * GET.
-     *
-     * @param $uri
-     * @param array $data
-     *
-     * @return mixed|ResponseInterface
-     *
-     * @throws JSONParseException
-     * @throws RequestErrorException
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @inheritDoc
      */
-    public function get($uri, $data = [])
+    public function get(string $uri, array $payload = [])
     {
-        return $this->request('GET', $uri, $data);
+        return $this->request('GET', $uri, $payload);
     }
 
     /**
-     * POST.
-     *
-     * @param $uri
-     * @param array $data
-     *
-     * @return mixed|ResponseInterface
-     *
-     * @throws JSONParseException
-     * @throws RequestErrorException
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @inheritDoc
      */
-    public function post($uri, $data = [])
+    public function post(string $uri, array $payload = [])
     {
-        return $this->request('POST', $uri, $data);
+        return $this->request('POST', $uri, $payload);
     }
 
     /**
-     * PUT.
-     *
-     * @param $uri
-     * @param array $data
-     *
-     * @return mixed|ResponseInterface
-     *
-     * @throws JSONParseException
-     * @throws RequestErrorException
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @inheritDoc
      */
-    public function put($uri, $data = [])
+    public function put(string $uri, array $payload = [])
     {
-        return $this->request('PUT', $uri, $data);
+        return $this->request('PUT', $uri, $payload);
     }
 
     /**
-     * DELETE.
-     *
-     * @param $uri
-     * @param array $data
-     *
-     * @return mixed|ResponseInterface
-     *
-     * @throws JSONParseException
-     * @throws RequestErrorException
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @inheritDoc
      */
-    public function delete($uri, $data = [])
+    public function delete(string $uri, array $payload = [])
     {
-        return $this->request('DELETE', $uri, $data);
+        return $this->request('DELETE', $uri, $payload);
     }
 
     /**
      * Downloads the given invoice.
      *
-     * @param $id
-     * @param resource|string|null $file
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
+     * @param int|string $invoiceId
+     * @param null $file
      *
      * @return \Psr\Http\Message\StreamInterface|string|null
-     *
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function downloadInvoice($id, $file = null)
+    public function downloadInvoice($invoiceId, $file = null)
     {
-        $uri = "invoices/{$id}/download";
+        $uri = "invoices/{$invoiceId}/download";
         $options = ['headers' => $this->generateAuthHeader()];
-        if (!is_null($file)) {
+
+        if ($file !== null) {
             $options['sink'] = $file;
         }
+
         $response = $this->client->request('GET', $uri, $options);
 
         return $response instanceof ResponseInterface ? $response->getBody() : null;
@@ -204,19 +184,22 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     /**
      * Get billingo token for user.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @param $pubKey
      * @param $privateKey
      *
-     * @return string Billingo token
-     *
-     * @throws JSONParseException
-     * @throws RequestErrorException
+     * @return mixed
      * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Otisz\BillingoConnector\Exceptions\JSONParseException
+     * @throws \Otisz\BillingoConnector\Exceptions\RequestErrorException
      */
     public function getBillingoToken($pubKey, $privateKey)
     {
-        $tr = new TokenRequest($pubKey, $privateKey);
-        $response = $this->get('token', ['tokenrequest' => $tr->generateWithSignatureAndTiming()]);
+        $tokenRequest = new TokenRequest($pubKey, $privateKey);
+        $response = $this->get('token', [
+            'tokenrequest' => $tokenRequest->generateWithSignatureAndTiming(),
+        ]);
 
         return $response['token'];
     }
@@ -224,19 +207,21 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     /**
      * Generate JWT authorization header.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @return string
      */
-    public function generateJWTArray()
+    public function generateJWTArray(): string
     {
         $time = time();
-        $iss = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'cli';
+        $iss = $_SERVER['REQUEST_URI'] ?: 'cli';
         $signatureData = [
             'sub' => $this->config['public_key'],
             'iat' => $time - $this->config['leeway'],
             'exp' => $time + $this->config['leeway'],
             'iss' => $iss,
             'nbf' => $time - $this->config['leeway'],
-            'jti' => md5($this->config['public_key'].$time),
+            'jti' => md5($this->config['public_key'] . $time),
         ];
 
         return JWT::encode($signatureData, $this->config['private_key']);
@@ -245,12 +230,14 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     /**
      * Generate authentication header based on JWT.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @return array
      */
-    protected function generateJWTHeader()
+    protected function generateJWTHeader(): array
     {
         return [
-            'Authorization' => 'Bearer '.$this->generateJWTArray(),
+            'Authorization' => 'Bearer ' . $this->generateJWTArray(),
         ];
     }
 
@@ -258,9 +245,11 @@ class Request implements \Billingo\API\Connector\Contracts\Request
      * When using BillingoToken for authentication
      * use this function to generate the correct header.
      *
+     * @author Levente Otta <leventeotta@gmail.com>
+     *
      * @return array
      */
-    protected function generateBillingoTokenHeader()
+    protected function generateBillingoTokenHeader(): array
     {
         return [
             'X-Billingo-Token' => $this->config['token'],
@@ -268,17 +257,18 @@ class Request implements \Billingo\API\Connector\Contracts\Request
     }
 
     /**
-     * Generate the correct authentication header(s)
-     * either JWT or BillingoToken.
+     * Generate the correct authentication header(s) either JWT or BillingoToken.
+     *
+     * @author Levente Otta <leventeotta@gmail.com>
      *
      * @return array
      */
-    protected function generateAuthHeader()
+    protected function generateAuthHeader(): array
     {
         if ($this->resolver->isDefined('token')) {
             return $this->generateBillingoTokenHeader();
-        } else {
-            return $this->generateJWTHeader();
         }
+
+        return $this->generateJWTHeader();
     }
 }
