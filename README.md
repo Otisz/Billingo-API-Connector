@@ -63,9 +63,9 @@ You can start making requests to the Billingo API just by creating a new `Reques
 
 ```php
 <?php
-  use Otisz\BillingoConnector\HTTP\Request;
+  use Otisz\BillingoConnector\Connector;
 
-  $billingo = new Request([
+  $billingo = new Connector([
 	  'public_key' => 'YOUR_PUBLIC_KEY',
 	  'private_key' => 'YOUR_PRIVATE_KEY'
   ]);
