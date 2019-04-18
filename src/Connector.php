@@ -6,25 +6,24 @@
  * @copyright Copyright (c) 2019. Levente Otta
  */
 
-namespace Otisz\BillingoConnector\HTTP;
+namespace Otisz\BillingoConnector;
 
 use Firebase\JWT\JWT;
 use GuzzleHttp\Client;
-use Otisz\BillingoConnector\Contracts\Requestable;
+use Otisz\BillingoConnector\Contracts\Request;
 use Otisz\BillingoConnector\Exceptions\JSONParseException;
 use Otisz\BillingoConnector\Exceptions\RequestErrorException;
-use Otisz\BillingoConnector\TokenRequest;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Class Request
+ * Class Connector
  *
  * @author Levente Otta <leventeotta@gmail.com>
  *
- * @package Otisz\BillingoConnector\HTTP
+ * @package Otisz\BillingoConnector
  */
-class Request implements Requestable
+class Connector implements Request
 {
     /**
      * @var \GuzzleHttp\Client $client
@@ -76,7 +75,10 @@ class Request implements Requestable
         if (array_key_exists('token', $opts)) {
             $this->resolver->setRequired('token');
         } else {
-            $this->resolver->setRequired(['private_key', 'public_key']);
+            $this->resolver->setRequired([
+                'private_key',
+                'public_key',
+            ]);
         }
 
         return $this->resolver->resolve($opts);
@@ -214,7 +216,7 @@ class Request implements Requestable
     public function generateJWTArray(): string
     {
         $time = time();
-        $iss = $_SERVER['REQUEST_URI'] ?: 'cli';
+        $iss = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'cli';
         $signatureData = [
             'sub' => $this->config['public_key'],
             'iat' => $time - $this->config['leeway'],
