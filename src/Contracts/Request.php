@@ -9,13 +9,13 @@
 namespace Otisz\BillingoConnector\Contracts;
 
 /**
- * Interface Requestable
+ * Interface Request
  *
  * @author Levente Otta <leventeotta@gmail.com>
  *
  * @package Otisz\BillingoConnector\Contracts
  */
-interface Requestable
+interface Request
 {
     /**
      * @author Levente Otta <leventeotta@gmail.com>
