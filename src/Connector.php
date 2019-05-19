@@ -119,7 +119,7 @@ class Connector implements Request
             throw new RequestErrorException('Error: ' . $jsonData['error'], $response->getStatusCode());
         }
 
-        if (array_key_exists('data', $jsonData)) {
+        if (array_key_exists('data', $jsonData) && $jsonData['data']) {
             return $jsonData['data'];
         }
 
